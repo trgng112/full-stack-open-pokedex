@@ -1,3 +1,28 @@
+# name: Deployment pipeline
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+# jobs:
+
+#   simple_deployment_pipeline:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v6
+#       - uses: actions/setup-node@v6
+#         with:
+#           node-version: '22'
+# deploy:
+#   runs-on: ubuntu-latest
+#   steps:
+#     - uses: JorgeLNJunior/render-deploy@v1.4.7
+#       with:
+#         service_id: ${{ secrets.RENDER_SERVICE_ID }}
+#         api_key: ${{ secrets.RENDER_API_KEY }}
+
+
 name: Deployment pipeline
 
 on:
@@ -6,17 +31,15 @@ on:
       - main
 
 jobs:
-
-  simple_deployment_pipeline:
+  deploy:
     runs-on: ubuntu-latest
+    permissions:
+      deployments: write
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: JorgeLNJunior/render-deploy@v1.4.7
         with:
-          node-version: '22'
-      - name: Install dependencies
-        run: npm install
-      - name: Check style
-        run: npm run eslint
-      - name: Build the application
-        run: npm run build
+          service_id: ${{ secrets.RENDER_SERVICE_ID }}
+          api_key: ${{ secrets.RENDER_API_KEY }}
+          github_deployment: true
+          deployment_environment: 'production'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
