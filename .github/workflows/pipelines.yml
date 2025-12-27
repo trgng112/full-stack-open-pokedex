@@ -53,3 +53,18 @@ jobs:
         uses: anothrNick/github-tag-action@1.75.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  status_check:
+    needs: [lint_and_test, deploy, bump_version]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check pipeline status
+        run: |
+          if [[ "${{ needs.lint_and_test.result }}" == "failure" || \
+                "${{ needs.deploy.result }}" == "failure" || \
+                "${{ needs.bump_version.result }}" == "failure" ]]; then
+            echo "❌ Pipeline failed!"
+            exit 1
+          fi
+          echo "✅ Pipeline completed successfully!"
