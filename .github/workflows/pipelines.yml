@@ -58,7 +58,33 @@ jobs:
     needs: [lint_and_test, deploy, bump_version]
     runs-on: ubuntu-latest
     if: always()
+    permissions:
+      pull-requests: write
     steps:
+      - name: Comment on PR if pipeline failed
+        if: github.event_name == 'pull_request' && (needs.lint_and_test.result == 'failure' || needs.deploy.result == 'failure' || needs.bump_version.result == 'failure')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const failedJobs = [];
+            if ('${{ needs.lint_and_test.result }}' === 'failure') failedJobs.push('Lint and Test');
+            if ('${{ needs.deploy.result }}' === 'failure') failedJobs.push('Deploy');
+            if ('${{ needs.bump_version.result }}' === 'failure') failedJobs.push('Bump Version');
+            
+            const body = `## ❌ Pipeline Failed
+            
+            The following jobs failed:
+            ${failedJobs.map(job => `- ${job}`).join('\n')}
+            
+            Please check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+      
       - name: Check pipeline status
         run: |
           if [[ "${{ needs.lint_and_test.result }}" == "failure" || \
